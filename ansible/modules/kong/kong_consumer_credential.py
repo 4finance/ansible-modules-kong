@@ -4,26 +4,26 @@ from ansible.module_utils.kong_helpers import *
 
 DOCUMENTATION = '''
 ---
-module: kong_consumer_plugin
-short_description: Configure a Kong Consumer Plugin object.
+module: kong_consumer_credential
+short_description: Configure an auth plugin credential for Kong Consumer object.
 '''
 
 EXAMPLES = '''
 - name: Configure a Consumer's API key
-  kong_consumer_plugin:
+  kong_consumer_consumer_credential:
     kong_admin_uri: http://localhost:8001
     username: apiconsumer
-    plugin: key-auth
+    type: key-auth
     config:
       key: the-api-key
     state: present
 
-The plugin configuration can be revoked by setting `state: absent`
+The auth plugin configuration can be revoked by setting `state: absent`
 on the resource. Since there can be an arbitrary amount of plugin
 configurations for a Consumer, the `config` section needs to be identical.
 '''
 
-MIN_VERSION = '0.11.0'
+MIN_VERSION = '0.14.0'
 
 
 def main():
@@ -33,7 +33,7 @@ def main():
             kong_admin_username=dict(required=False, type='str'),
             kong_admin_password=dict(required=False, type='str', no_log=True),
             username=dict(required=True, type='str'),
-            plugin=dict(required=True, type='str'),
+            type=dict(required=True, choices=['acl', 'basis-auth', 'hmac-auth', 'key-auth', 'jwt', 'oauth2'], type='str'),
             config=dict(required=False, type='dict', default=dict()),
             state=dict(required=False, default="present", choices=['present', 'absent'], type='str'),
         ),
@@ -51,7 +51,7 @@ def main():
     # Extract other arguments
     state = ansible_module.params['state']
     username = ansible_module.params['username']
-    plugin = ansible_module.params['plugin']
+    auth_type = ansible_module.params['type']
     config = ansible_module.params['config']
 
     # Create KongConsumer client instance
@@ -68,12 +68,12 @@ def main():
     resp = ''
     diff = []
 
-    # Check if the Consumer Plugin configuration exists
-    cpq = k.consumer_plugin_query(username, plugin, config=config)
+    # Check if the Consumer auth plugin configuration exists
+    cpq = k.credential_query(username, auth_type, config=config)
     if len(cpq) > 1:
         ansible_module.fail_json(
             msg='Got multiple results for Consumer Plugin query.',
-            username=username, plugin=plugin, config=config)
+            username=username, type=auth_type, config=config)
 
     # Ensure the Consumer Plugins is configured
     if state == "present" and not cpq:
@@ -85,14 +85,14 @@ def main():
         # Append diff entry
         diff.append(dict(
             before_header='<undefined>', before='<undefined>\n',
-            after_header='{}/{}'.format(username, plugin), after=config
+            after_header='{}/{}'.format(username, auth_type), after=config
         ))
 
         # Only make changes when Ansible is not run in check mode
         if not ansible_module.check_mode and changed:
             try:
                 # Apply changes to Kong
-                resp = k.consumer_plugin_apply(username, plugin, config=config)
+                resp = k.credential_apply(username, auth_type, config=config)
 
             except Exception as e:
                 ansible_module.fail_json(msg='Consumer Plugin configuration rejected by Kong.', err=str(e))
@@ -108,7 +108,7 @@ def main():
         result['state'] = 'deleted'
 
         diff.append(dict(
-            before_header='{}/{}'.format(username, plugin), before=orig,
+            before_header='{}/{}'.format(username, auth_type), before=orig,
             after_header='<deleted>', after='\n'
         ))
 
@@ -116,10 +116,10 @@ def main():
         if not ansible_module.check_mode and orig:
             # Issue delete call
             try:
-                resp = k.consumer_plugin_delete(consumer_idname=username, plugin_name=plugin, config=config)
+                resp = k.credential_delete(consumer_idname=username, auth_type=auth_type, config=config)
             except Exception as e:
                 ansible_module.fail_json(
-                    msg='Error deleting Consumer Plugin.',
+                    msg='Error deleting Consumer credential.',
                     err=str(e))
 
     # Pass through the API response if non-empty

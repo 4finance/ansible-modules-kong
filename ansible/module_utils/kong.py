@@ -8,7 +8,9 @@ class Kong(object):
         'status',
         'consumers',
         'apis',
-        'plugins'
+        'plugins',
+        'services',
+        'routes'
     ]
 
     def __init__(self, base_url, auth_user=None, auth_pass=None, ping=True):
@@ -38,19 +40,21 @@ class Kong(object):
 
         return r.json()
 
-    def _post(self, uri, data=None):
+    def _post(self, uri,data=None):
         """
         Execute POST request using the resource, action and payload.
         """
         url = self._url(uri)
 
-        r = requests.post(url, data=data, auth=self.auth)
+        r = requests.post(url, json=data, auth=self.auth)
 
-        if r.status_code != requests.codes.created:
+        if r.status_code == requests.codes.created:
+            return r.json()
+        elif r.status_code == requests.codes.conflict:
+            raise Exception('')
+        else:
             raise Exception('Unexpected HTTP code {}, expected {}'
                             .format(r.status_code, requests.codes.created))
-
-        return r.json()
 
     def _patch(self, uri, data=None):
         """
@@ -58,7 +62,7 @@ class Kong(object):
         """
         url = self._url(uri)
 
-        r = requests.patch(url, data=data, auth=self.auth)
+        r = requests.patch(url, json=data, auth=self.auth)
 
         # Expect 200 OK
         r.raise_for_status()

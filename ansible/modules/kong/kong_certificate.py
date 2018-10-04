@@ -1,31 +1,31 @@
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.dotdiff import dotdiff
-from ansible.module_utils.kong_api import KongAPI
+from ansible.module_utils.kong_certificate import KongCertificate
 from ansible.module_utils.kong_helpers import *
 
 DOCUMENTATION = '''
 ---
-module: kong_api
-short_description: Configure a Kong API object.
+module: kong_certificate
+short_description: Configure a Kong Certificate object.
 '''
 
 EXAMPLES = '''
-- name: Configure an API
-  kong_api:
+- name: Add a certificate to Kong
+  kong_certificate:
     kong_admin_uri: http://localhost:8001
-    name: Mockbin
-    upstream_url: http://mockbin.com
-    hosts: mockbin.com
+    sni: example.com
+    cert: "{{ lookup('file', 'cert.pem') }}"
+    key: "{{ lookup('file', 'key.pem') }}"
     state: present
 
-- name: Delete an API
-  kong_api:
+- name: Delete a certificate
+  kong_certificate:
     kong_admin_uri: http://localhost:8001
-    name: Mockbin
+    sni: example.com
     state: absent
 '''
 
-MIN_VERSION = '0.11.0'
+MIN_VERSION = '0.14.0'
 
 
 def main():
@@ -34,17 +34,13 @@ def main():
             kong_admin_uri=dict(required=True, type='str'),
             kong_admin_username=dict(required=False, type='str'),
             kong_admin_password=dict(required=False, type='str', no_log=True),
-            name=dict(required=True, type='str'),
-            upstream_url=dict(required=False, type='str'),
-            hosts=dict(required=False, type='list'),
-            uris=dict(required=False, type='list'),
-            methods=dict(required=False, type='list'),
-            strip_uri=dict(required=False, default=False, type='bool'),
-            preserve_host=dict(required=False, default=False, type='bool'),
+            sni=dict(required=True, type='str'),
+            cert=dict(required=False, type='str'),
+            key=dict(required=False, type='str', no_log=True),
             state=dict(required=False, default="present", choices=['present', 'absent'], type='str'),
         ),
         required_if=[
-            ('state', 'present', ['upstream_url'])
+            ('state', 'present', ['sni','cert','key'])
         ],
         supports_check_mode=True
     )
@@ -52,28 +48,11 @@ def main():
     # Initialize output dictionary
     result = {}
 
-    # Emulates 'required_one_of' argument spec, as it cannot be made conditional
-    if ansible_module.params['state'] == 'present' and \
-            ansible_module.params['hosts'] is None and \
-            ansible_module.params['uris'] is None and \
-            ansible_module.params['methods'] is None:
-        ansible_module.fail_json(msg="At least one of hosts, uris or methods is required when state is 'present'")
-
-    # Kong 0.11.x
+    # Kong 0.14.x
     api_fields = [
-        'name',
-        'upstream_url',
-        'hosts',
-        'uris',
-        'methods',
-        'strip_uri',
-        'preserve_host',
-        'retries',
-        'upstream_connect_timeout',
-        'upstream_read_timeout',
-        'upstream_send_timeout',
-        'https_only',
-        'http_if_terminated'
+        'sni',
+        'cert',
+        'key',
     ]
 
     # Extract api_fields from module parameters into separate dictionary
@@ -86,10 +65,10 @@ def main():
 
     # Extract other arguments
     state = ansible_module.params['state']
-    name = ansible_module.params['name']
+    sni = ansible_module.params['sni']
 
-    # Create KongAPI client instance
-    k = KongAPI(url, auth_user=auth_user, auth_pass=auth_pass)
+    # Create KongCertificate client instance
+    k = KongCertificate(url, auth_user=auth_user, auth_pass=auth_pass)
 
     # Contact Kong status endpoint
     kong_status_check(k, ansible_module)
@@ -101,63 +80,63 @@ def main():
     changed = False
     resp = ''
 
-    # Ensure the API is registered in Kong
+    # Ensure the service is registered in Kong
     if state == "present":
 
-        # Check if the API exists
-        orig = k.api_get(name)
+        # Check if the service exists
+        orig = k.certificate_get(sni)
         if orig is not None:
 
             # Diff the remote API object against the target data if it already exists
-            apidiff = dotdiff(orig, data)
+            servicediff = dotdiff(orig, data)
 
             # Set changed flag if there's a diff
-            if apidiff:
+            if servicediff:
                 # Log modified state and diff result
                 changed = True
                 result['state'] = 'modified'
-                result['diff'] = [dict(prepared=render_list(apidiff))]
+                result['diff'] = [dict(prepared=render_list(servicediff))]
 
         else:
-            # We're inserting a new API, set changed
+            # We're inserting a new service, set changed
             changed = True
             result['state'] = 'created'
             result['diff'] = dict(
                 before_header='<undefined>', before='<undefined>\n',
-                after_header=name, after=data
+                after_header=sni, after='<hidden>'
             )
 
         # Only make changes when Ansible is not run in check mode
         if not ansible_module.check_mode and changed:
             try:
-                resp = k.api_apply(**data)
+                resp = k.certificate_apply(**data)
             except Exception as e:
-                app_err = "API configuration rejected by Kong: '{}'. " \
-                          "Please check configuration of the API you are trying to configure."
+                app_err = "Certfificate configuration rejected by Kong: '{}'. " \
+                          "Please check configuration of the certificate you are trying to configure."
                 ansible_module.fail_json(msg=app_err.format(e))
 
-    # Ensure the API is deleted
+    # Ensure the certificate is deleted
     if state == "absent":
 
-        # Check if the API exists
-        orig = k.api_get(name)
+        # Check if the certificate exists
+        orig = k.certificate_get(sni)
 
-        # Predict a change if the API exists
+        # Predict a change if the certfificate exists
         if orig:
             changed = True
             result['state'] = 'deleted'
             result['diff'] = dict(
-                before_header=name, before=orig,
+                before_header=sni, before='<hidden>',
                 after_header='<deleted>', after='\n'
             )
 
         # Only make changes when Ansible is not run in check mode
         if not ansible_module.check_mode and orig:
-            # Issue delete call to the Kong API
+            # Issue delete call to the Kong service
             try:
-                resp = k.api_delete(name)
+                resp = k.certificate_delete(name)
             except Exception as e:
-                ansible_module.fail_json(msg='Error deleting API: {}'.format(e))
+                ansible_module.fail_json(msg='Error deleting certificate: {}'.format(e))
 
     # Pass through the API response if non-empty
     if resp:

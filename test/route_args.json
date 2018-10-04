@@ -1,0 +1,11 @@
+{
+    "ANSIBLE_MODULE_ARGS": {
+        "kong_admin_uri": "http://localhost:8001",
+        "service": "mockbin",
+        "hosts": ["localhost"],
+        "protocols": ["https"],
+        "paths": ["/qwerty"],
+        "preserve_host": true,
+        "state": "present"
+    }
+}
