@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 from setuptools import setup
 
-py_files = [
-    "ansible/module_utils/kong",
-]
 files = [
     "ansible/modules/kong",
+    "ansible/module_utils/kong",
 ]
 
 long_description=open('README.md', 'r').read()
@@ -19,7 +17,6 @@ setup(
     author='Roman Komkov',
     author_email='roman.komkov@4finance.com',
     url='https://github.com/4finance/ansible-modules-kong',
-    py_modules=py_files,
     packages=files,
     install_requires = [
         'ansible>=2.1.0',
