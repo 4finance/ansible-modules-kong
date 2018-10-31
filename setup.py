@@ -3,12 +3,6 @@ from setuptools import setup
 
 py_files = [
     "ansible/module_utils/kong",
-    "ansible/module_utils/kong_certificate",
-    "ansible/module_utils/kong_consumer",
-    "ansible/module_utils/kong_helpers",
-    "ansible/module_utils/kong_plugin",
-    "ansible/module_utils/kong_route",
-    "ansible/module_utils/kong_service",
 ]
 files = [
     "ansible/modules/kong",
