@@ -107,7 +107,7 @@ def main():
     if state == "present":
 
         # Check if the Route with same set of hosts, paths, methods and protocols exists
-        orig = k.query(service, hosts=data['hosts'], paths=data['paths'],
+        orig = k.route_query(service, hosts=data['hosts'], paths=data['paths'],
                      methods=data['methods'], protocols=data['protocols'])
 
         if orig is not None:

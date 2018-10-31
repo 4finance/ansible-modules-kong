@@ -16,7 +16,9 @@
     hosts: "{{ item.1.hosts }}"
     paths: "{{ item.1.paths }}"
     state: "{{ item.1.state|d('present') }}"
-  loop: "{{ kong_services|subelements('routes') }}"
+  loop: "{{ kong_services|subelements('routes', skip_missing=True) }}"
+  when: (item.1.state is not defined) or
+        (item.1.state == 'present')
 
 - name: manage Kong consumers
   kong_consumer:
