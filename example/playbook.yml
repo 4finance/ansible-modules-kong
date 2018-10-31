@@ -1,5 +1,6 @@
 ---
 
-- hosts: example_kong_1
+- hosts: localhost
+  gather_facts: False
   roles:
     - kong

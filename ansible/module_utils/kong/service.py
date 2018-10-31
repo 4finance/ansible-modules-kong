@@ -77,7 +77,7 @@ class KongService(Kong):
         }
 
         # check if the service is already defined in Kong
-        if self.get(name):
+        if self.service_get(name):
             # patch the resource at /services/{name}
             r = self._patch(['services', name], data=payload)
         else:
@@ -95,7 +95,7 @@ class KongService(Kong):
         :return: True on a successful delete, False if it didn't exist
         :rtype: bool
         """
-        if self.get(name):
+        if self.service_get(name):
             return self._delete(['services', name])
 
         return False

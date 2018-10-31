@@ -76,7 +76,7 @@ class KongPlugin(KongService, KongRoute, KongConsumer, Kong):
             if s is None:
                 raise ValueError('Service {} not found. Has it been created?'.format(service_name))
 
-            service_id = a.get('id')
+            service_id = s.get('id')
 
             uuid.UUID(service_id)
 
