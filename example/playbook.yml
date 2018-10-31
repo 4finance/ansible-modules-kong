@@ -1,0 +1,5 @@
+---
+
+- hosts: example_kong_1
+  roles:
+    - kong

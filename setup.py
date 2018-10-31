@@ -14,19 +14,19 @@ files = [
     "ansible/modules/kong",
 ]
 
-long_description=open('README.rst', 'r').read()
+long_description=open('README.md', 'r').read()
 version=open('VERSION', 'r').read()
 
 setup(
-    name='ansible-kong',
+    name='ansible-modules-kong',
     version=version,
-    description='Kong 0.14.x module and Python library for Ansible',
+    description='Ansible Modules for Kong 0.14.x',
     long_description=long_description,
     author='Roman Komkov',
     author_email='roman.komkov@4finance.com',
-    url='https://github.com/decayofmind/ansible-kong-module',
+    url='https://github.com/4finance/ansible-modules-kong',
+    py_modules=py_files,
     packages=files,
-    package_dir={'ansible': ''},
     install_requires = [
         'ansible>=2.1.0',
         'ansible-dotdiff'

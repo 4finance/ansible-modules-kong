@@ -1,0 +1,52 @@
+---
+
+- name: manage Kong services
+  kong_service:
+    kong_admin_uri: "{{ kong_admin_uri }}"
+    name: "{{ item.name }}"
+    protocol: https
+    host: "{{ item.host }}"
+    state: "{{ item.state|d('present') }}"
+  loop: "{{ kong_services }}"
+
+- name: manage Kong routes
+  kong_route:
+    kong_admin_uri: "{{ kong_admin_uri }}"
+    service: "{{ item.0.name }}"
+    hosts: "{{ item.1.hosts }}"
+    paths: "{{ item.1.paths }}"
+    state: "{{ item.1.state|d('present') }}"
+  loop: "{{ kong_services|subelements('routes') }}"
+
+- name: manage Kong consumers
+  kong_consumer:
+    kong_admin_uri: "{{ kong_admin_uri }}"
+    username: "{{ item.username }}"
+    state: "{{ item.state|d('present') }}"
+  loop: "{{ kong_consumers }}"
+
+- name: manage Kong consumers' credentials
+  kong_consumer_credential:
+    kong_admin_uri: "{{ kong_admin_uri }}"
+    username: "{{ item.0.username }}"
+    type: "{{ item.1.type }}"
+    config: "{{ item.1.config }}"
+    state: "{{ item.1.state|d('present') }}"
+  loop: "{{ kong_consumers|subelements('credentials') }}"
+
+- name: manage Kong plugins
+  kong_plugin:
+    kong_admin_uri: "{{ kong_admin_uri }}"
+    name: "{{ item.name }}"
+    service: "{{ item.service }}"
+    config: "{{ item.config }}"
+    state: "{{ item.state|d('present') }}"
+  loop: "{{ kong_consumers }}"
+
+- name: manage Kong sertificates
+  kong_certificate:
+    sni: "{{ item.sni }}"
+    cert: "{{ item.cert }}"
+    key: "{{ item.key }}"
+    state: "{{ item.state|d('present') }}"
+  loop: "{{ kong_certificates }}"
