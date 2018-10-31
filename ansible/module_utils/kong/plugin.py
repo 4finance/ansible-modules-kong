@@ -1,8 +1,8 @@
 import uuid
 from ansible.module_utils.kong import Kong
-from ansible.module_utils.kong_service import KongService
-from ansible.module_utils.kong_route import KongRoute
-from ansible.module_utils.kong_consumer import KongConsumer
+from ansible.module_utils.kong.service import KongService
+from ansible.module_utils.kong.route import KongRoute
+from ansible.module_utils.kong.consumer import KongConsumer
 from ansible.module_utils.six import iteritems
 
 

@@ -1,5 +1,5 @@
 from ansible.module_utils.kong import Kong
-from ansible.module_utils.kong_service import KongService
+from ansible.module_utils.kong.service import KongService
 
 import requests
 

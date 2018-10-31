@@ -1,7 +1,7 @@
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.dotdiff import dotdiff
-from ansible.module_utils.kong_route import KongRoute
-from ansible.module_utils.kong_helpers import *
+from ansible.module_utils.kong.route import KongRoute
+from ansible.module_utils.kong.helpers import *
 
 DOCUMENTATION = '''
 ---

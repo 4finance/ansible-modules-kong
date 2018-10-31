@@ -1,6 +1,6 @@
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.kong_consumer import KongConsumer
-from ansible.module_utils.kong_helpers import *
+from ansible.module_utils.kong.consumer import KongConsumer
+from ansible.module_utils.kong.helpers import *
 
 DOCUMENTATION = '''
 ---

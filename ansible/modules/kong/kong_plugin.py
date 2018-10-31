@@ -1,7 +1,7 @@
 import requests
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.kong_helpers import *
-from ansible.module_utils.kong_plugin import KongPlugin
+from ansible.module_utils.kong.plugin import KongPlugin
+from ansible.module_utils.kong.helpers import *
 
 from ansible.module_utils.dotdiff import dotdiff
 
