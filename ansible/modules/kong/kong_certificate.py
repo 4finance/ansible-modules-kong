@@ -48,24 +48,22 @@ def main():
     # Initialize output dictionary
     result = {}
 
-    # Kong 0.14.x
-    api_fields = [
-        'sni',
-        'cert',
-        'key',
-    ]
-
-    # Extract api_fields from module parameters into separate dictionary
-    data = params_fields_lookup(ansible_module, api_fields)
-
     # Admin endpoint & auth
     url = ansible_module.params['kong_admin_uri']
     auth_user = ansible_module.params['kong_admin_username']
     auth_pass = ansible_module.params['kong_admin_password']
 
-    # Extract other arguments
+    # Extract arguments
     state = ansible_module.params['state']
     sni = ansible_module.params['sni']
+    cert = ansible_module.params['cert']
+    key = ansible_module.params['key']
+
+    data = {
+      'snis': [sni],
+      'cert': cert.strip(),
+      'key': key.strip()
+    }
 
     # Create KongCertificate client instance
     k = KongCertificate(url, auth_user=auth_user, auth_pass=auth_pass)
@@ -88,14 +86,14 @@ def main():
         if orig is not None:
 
             # Diff the remote API object against the target data if it already exists
-            servicediff = dotdiff(orig, data)
+            certdiff = dotdiff(orig, data)
 
             # Set changed flag if there's a diff
-            if servicediff:
+            if certdiff:
                 # Log modified state and diff result
                 changed = True
                 result['state'] = 'modified'
-                result['diff'] = [dict(prepared=render_list(servicediff))]
+                result['diff'] = [dict(prepared=render_list(certdiff))]
 
         else:
             # We're inserting a new service, set changed

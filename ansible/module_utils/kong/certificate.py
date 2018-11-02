@@ -29,14 +29,14 @@ class KongCertificate(Kong):
         else:
             return r
 
-    def certificate_apply(self, sni, cert, key):
+    def certificate_apply(self, snis, cert, key):
         """
         Declaratively apply the Certificate object configuration to the server.
         Will choose to POST or PATCH depending on whether the Certificate for SNI already exists or not.
         See Kong Certificate documentation for more info on the arguments of this method.
 
-        :param sni: SNI to associate the Certificate with
-        :type name: str
+        :param snis: SNIs to associate the Certificate with
+        :type snis: str
         :param cert: certificate in PKE format
         :type cert: str
         :param key: certificate private key in PKE format
@@ -45,8 +45,8 @@ class KongCertificate(Kong):
         :rtype: dict
         """
 
-        if sni is None:
-            raise ValueError('sni needs to be specified.')
+        if snis is None:
+            raise ValueError('snis needs to be specified.')
 
         if cert is None:
             raise ValueError('cert needs to be specified.')
@@ -55,10 +55,13 @@ class KongCertificate(Kong):
             raise ValueError('key needs to be specified.')
 
         data = {
-            'sni': sni,
+            'snis': snis,
             'cert': cert,
             'key': key,
         }
+
+        # Support only one SNI per Certificate
+        sni = snis[0]
 
         # check if the Certificate for SNI is already defined in Kong
         if self.certificate_get(sni):

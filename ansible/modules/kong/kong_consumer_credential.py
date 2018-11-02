@@ -33,7 +33,7 @@ def main():
             kong_admin_username=dict(required=False, type='str'),
             kong_admin_password=dict(required=False, type='str', no_log=True),
             username=dict(required=True, type='str'),
-            type=dict(required=True, choices=['acl', 'basis-auth', 'hmac-auth', 'key-auth', 'jwt', 'oauth2'], type='str'),
+            type=dict(required=True, choices=['acl', 'basic-auth', 'hmac-auth', 'key-auth', 'jwt', 'oauth2'], type='str'),
             config=dict(required=False, type='dict', default=dict()),
             state=dict(required=False, default="present", choices=['present', 'absent'], type='str'),
         ),
@@ -48,7 +48,7 @@ def main():
     auth_user = ansible_module.params['kong_admin_username']
     auth_pass = ansible_module.params['kong_admin_password']
 
-    # Extract other arguments
+    # Extract  arguments
     state = ansible_module.params['state']
     username = ansible_module.params['username']
     auth_type = ansible_module.params['type']
@@ -68,34 +68,59 @@ def main():
     resp = ''
     diff = []
 
-    # Check if the Consumer auth plugin configuration exists
-    cpq = k.credential_query(username, auth_type, config=config)
-    if len(cpq) > 1:
+    # Check if the credential for the Consumer exists
+
+    if auth_type == 'basic-auth':
+        cq = k.credential_query(username, auth_type,
+                                config={'username':config.get('username')})
+    else:
+        cq = k.credential_query(username, auth_type, config=config)
+
+    if len(cq) > 1:
         ansible_module.fail_json(
             msg='Got multiple results for Consumer Plugin query.',
             username=username, type=auth_type, config=config)
 
     # Ensure the Consumer Plugins is configured
-    if state == "present" and not cpq:
+    if state == "present":
+        if not cq:
 
-        # Insert a new Consumer Plugin configuration
-        changed = True
-        result['state'] = 'created'
+            # Insert a new Consumer Plugin configuration
+            changed = True
+            result['state'] = 'created'
 
-        # Append diff entry
-        diff.append(dict(
-            before_header='<undefined>', before='<undefined>\n',
-            after_header='{}/{}'.format(username, auth_type), after=config
-        ))
+            # Append diff entry
+            diff.append(dict(
+                before_header='<undefined>', before='<undefined>\n',
+                after_header='{}/{}'.format(username, auth_type), after=config
+            ))
 
-        # Only make changes when Ansible is not run in check mode
-        if not ansible_module.check_mode and changed:
-            try:
-                # Apply changes to Kong
-                resp = k.credential_apply(username, auth_type, config=config)
+            # Only make changes when Ansible is not run in check mode
+            if not ansible_module.check_mode and changed:
+                try:
+                    # Apply changes to Kong
+                    resp = k.credential_apply(username, auth_type, config=config)
 
-            except Exception as e:
-                ansible_module.fail_json(msg='Consumer Plugin configuration rejected by Kong.', err=str(e))
+                except Exception as e:
+                    ansible_module.fail_json(msg='Consumer Plugin configuration rejected by Kong.', err=str(e))
+
+        if cq and auth_type == 'basic-auth':
+
+            # Only make changes when Ansible is not run in check mode
+            if not ansible_module.check_mode:
+                try:
+                    # Apply changes to Kong
+                    resp = k.credential_apply(username, auth_type, config=config)
+
+                except Exception as e:
+                    ansible_module.fail_json(msg='Consumer Plugin configuration rejected by Kong.', err=str(e))
+
+                orig = cq[0]
+
+                if orig.get('password') != resp.get('password'):
+                    changed = True
+                    result['state'] = 'modified'
+                    # result['diff'] = [dict(prepared=render_list(servicediff))]
 
     # Ensure the Consumer is deleted
     if state == "absent" and cpq:

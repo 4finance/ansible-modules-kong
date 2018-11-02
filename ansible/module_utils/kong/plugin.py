@@ -6,7 +6,7 @@ from ansible.module_utils.kong.consumer import KongConsumer
 from ansible.module_utils.six import iteritems
 
 
-class KongPlugin(KongService, KongRoute, KongConsumer, Kong):
+class KongPlugin(KongRoute, KongConsumer, Kong):
     """
     KongPlugin manages Plugin objects in Kong.
     Uses KongServie, KongRoute and KongConsumer as mixins to query Services, Routes

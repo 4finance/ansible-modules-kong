@@ -106,7 +106,7 @@ def main():
                 before_header='<undefined>', before='<undefined>\n',
                 after_header=name, after={
                     'name': name,
-                    'service': service
+                    'service': service,
                     'route': route,
                     'consumer': consumer,
                     'state': 'created',

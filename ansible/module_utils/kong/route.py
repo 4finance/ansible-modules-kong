@@ -6,16 +6,16 @@ import requests
 
 class KongRoute(KongService, Kong):
 
-    def route_list(self, service_idname):
+    def route_list(self, service_name):
         """
         Get a list of Routes associated to a Kong Service.
 
-        :param service_idname: service name or id to query route from
-        :type service_idname: str
+        :param service_name: service name to query route from
+        :type service_name: str
         :return: a list with routes
         :rtype: list
         """
-        return self._get(['services', service_idname, 'routes']).get('data', [])
+        return self._get(['services', service_name, 'routes']).get('data', [])
 
     def route_get(self, route_id):
         """
@@ -33,13 +33,13 @@ class KongRoute(KongService, Kong):
         else:
             return r
 
-    def route_query(self, service_idname, hosts=[], paths=[],
+    def route_query(self, service_name, hosts=[], paths=[],
             methods=[], protocols=[]):
         """
         Query Kong for a route matching the given attributes.
 
-        :param service_idname: service name or id to query route from
-        :type service_idname: str
+        :param service_name: service name or id to query route from
+        :type service_name: str
         :param hosts: hosts, requested route should have
         :type hosts: list
         :param paths: paths, requested route should have
@@ -60,7 +60,7 @@ class KongRoute(KongService, Kong):
 
         result = []
 
-        for r in self.route_list(service_idname):
+        for r in self.route_list(service_name):
             if (cmp(sorted(r.get('hosts', [])), sorted(hosts)) == 0 and
                 cmp(sorted(r.get('paths', [])), sorted(paths)) == 0 and
                 cmp(sorted(r.get('methods', [])), sorted(methods)) == 0 and

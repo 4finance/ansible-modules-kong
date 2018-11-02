@@ -153,13 +153,23 @@ class KongConsumer(Kong):
             raise ValueError('Consumer {} does not exist'.format(consumer_idname))
 
         # Check if the Consumer credential configuration exists
-        cpq = self.credential_query(consumer_idname, auth_type, config)
-        if len(cpq) > 1:
-            raise ValueError('Consumer Plugin query returned multiple results')
 
-        if not cpq:
+        # Workaround for idempotency of basic-auth credentials
+        if auth_type == 'basic-auth':
+            cq = self.credential_query(consumer_idname, auth_type, {'username':config.get('username')})
+        else:
+            cq = self.credential_query(consumer_idname, auth_type, config)
+
+        if not cq:
             # No credentials found, create the Consumer credential configuration
             return self._post(['consumers', consumer_idname, auth_type], data=config)
+
+        if len(cq) > 1:
+            raise ValueError('Consumer Plugin query returned multiple results')
+
+        if cq and auth_type == 'basic-auth':
+            credential_id = cq[0].get('id')
+            return self._patch(['consumers', consumer_idname, auth_type, credential_id], data=config)
 
         return False
 

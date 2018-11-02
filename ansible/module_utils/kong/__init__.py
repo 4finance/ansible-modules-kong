@@ -5,12 +5,13 @@ class Kong(object):
 
     # List of API resources the library supports
     resources = [
-        'status',
-        'consumers',
         'apis',
+        'certificates',
+        'consumers',
         'plugins',
+        'routes',
         'services',
-        'routes'
+        'status',
     ]
 
     def __init__(self, base_url, auth_user=None, auth_pass=None, ping=True):
@@ -50,8 +51,6 @@ class Kong(object):
 
         if r.status_code == requests.codes.created:
             return r.json()
-        elif r.status_code == requests.codes.conflict:
-            raise Exception('')
         else:
             raise Exception('Unexpected HTTP code {}, expected {}'
                             .format(r.status_code, requests.codes.created))

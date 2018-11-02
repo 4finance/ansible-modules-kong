@@ -130,7 +130,7 @@ def main():
             result['state'] = 'created'
             result['diff'] = dict(
                 before_header='<undefined>', before='<undefined>\n',
-                after_header=service['name'], after=data
+                after_header=service, after=data
             )
 
         # Only make changes when Ansible is not run in check mode
